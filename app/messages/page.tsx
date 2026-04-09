@@ -641,12 +641,12 @@ export default function MessagesPage() {
             <div style={{ width: 36, height: 4, backgroundColor: '#DBD3C6', borderRadius: 2, margin: '0 auto 20px' }} />
             <div style={{ width: '100%', height: 180, borderRadius: 12, backgroundImage: `url(${activeThread.image})`, backgroundSize: 'cover', backgroundPosition: 'center', marginBottom: 16 }} />
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#2C2A1E', margin: '0 0 6px', fontFamily: 'var(--font-lora)', letterSpacing: '-0.02em' }}>{activeThread.produce}</h3>
-            {[
+            {([
               ['Type', activeThread.listingType],
               ['Harvest Point', activeThread.harvestPoint],
               ['Expires', activeThread.expiry],
               activeThread.price ? ['Price', activeThread.price] : null,
-            ].filter(Boolean).map(([label, val]) => (
+            ].filter((r): r is string[] => r !== null)).map(([label, val]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '0.5px solid #F0ECE4' }}>
                 <span style={{ fontSize: 12, color: '#6B6454' }}>{label}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#2C2A1E' }}>{val}</span>
