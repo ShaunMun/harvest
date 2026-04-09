@@ -1,10 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../../lib/supabase'
 
 // ─── DEVELOPER TOOLBAR ────────────────────────────────────────────────────────
 // Floating dev nav panel. Remove the single line in layout.tsx to hide before launch.
 // ──────────────────────────────────────────────────────────────────────────────
+
+const TEST_EMAIL = 'test@harvest.app'
+const TEST_PASSWORD = 'harvest123'
 
 const NAV_LINKS = [
   { label: 'Onboarding', href: '/onboarding' },
@@ -17,6 +22,36 @@ const NAV_LINKS = [
 
 export function DevToolbar() {
   const [open, setOpen] = useState(false)
+  const [loginState, setLoginState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const router = useRouter()
+
+  // Ensure the test account exists on first load (no-op if already created)
+  useEffect(() => {
+    supabase.auth.signUp({
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD,
+      options: { data: { full_name: 'Test Grower', suburb: 'Sandton' } },
+    }).catch(() => {/* already exists — ignore */})
+  }, [])
+
+  const handleTestLogin = async () => {
+    setLoginState('loading')
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: TEST_EMAIL,
+        password: TEST_PASSWORD,
+      })
+      if (error) throw error
+      setLoginState('done')
+      setTimeout(() => {
+        router.push('/feed')
+        setLoginState('idle')
+      }, 600)
+    } catch {
+      setLoginState('error')
+      setTimeout(() => setLoginState('idle'), 2000)
+    }
+  }
 
   return (
     <div
@@ -38,7 +73,7 @@ export function DevToolbar() {
           backgroundColor: '#2C2A1E',
           borderRadius: '0 10px 10px 0',
           overflow: 'hidden',
-          maxWidth: open ? 160 : 0,
+          maxWidth: open ? 170 : 0,
           opacity: open ? 1 : 0,
           transition: 'max-width 250ms ease, opacity 250ms ease',
           display: 'flex',
@@ -62,6 +97,7 @@ export function DevToolbar() {
         >
           Dev nav
         </p>
+
         {NAV_LINKS.map(({ label, href }) => (
           <a
             key={label}
@@ -80,6 +116,47 @@ export function DevToolbar() {
             {label}
           </a>
         ))}
+
+        {/* Divider */}
+        <div style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+
+        {/* Test login button */}
+        <button
+          onClick={handleTestLogin}
+          disabled={loginState === 'loading' || loginState === 'done'}
+          style={{
+            margin: '2px 10px',
+            padding: '8px 10px',
+            borderRadius: 7,
+            border: 'none',
+            cursor: loginState === 'loading' ? 'wait' : 'pointer',
+            fontSize: 11,
+            fontFamily: 'monospace',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            transition: 'background 200ms, color 200ms',
+            backgroundColor:
+              loginState === 'done' ? '#4A7C59' :
+              loginState === 'error' ? '#E24B4A' :
+              '#B8B68F',
+            color: '#fff',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {loginState === 'loading' ? 'Signing in…' :
+           loginState === 'done'    ? '✓ Signed in' :
+           loginState === 'error'   ? '✗ Failed' :
+           '→ Login as test user'}
+        </button>
+
+        <p style={{
+          color: 'rgba(255,255,255,0.25)',
+          fontSize: 9,
+          margin: '4px 14px 0',
+          lineHeight: 1.4,
+        }}>
+          test@harvest.app
+        </p>
       </div>
 
       {/* Collapsed DEV tab */}
