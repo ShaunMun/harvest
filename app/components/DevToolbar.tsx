@@ -99,22 +99,28 @@ export function DevToolbar() {
         </p>
 
         {NAV_LINKS.map(({ label, href }) => (
-          <a
+          <button
             key={label}
-            href={href}
+            onClick={() => { window.location.href = href }}
             style={{
               display: 'block',
+              width: '100%',
               padding: '7px 14px',
               color: 'rgba(255,255,255,0.75)',
               fontSize: 12,
               textDecoration: 'none',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
               transition: 'color 150ms',
+              fontFamily: 'monospace',
             }}
             onMouseEnter={e => (e.currentTarget.style.color = '#DECCA6')}
             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}
           >
             {label}
-          </a>
+          </button>
         ))}
 
         {/* Divider */}

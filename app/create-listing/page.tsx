@@ -302,13 +302,13 @@ export default function CreateListingPage() {
       }
 
       const imageUrls = await uploadPhotos()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
       const expiresAt = new Date()
       const expiryHours = parseInt(form.expiry?.replace(/\D/g, '') || '48') || 48
       expiresAt.setHours(expiresAt.getHours() + expiryHours)
 
       await supabase.from('listings').insert({
-        grower_id: user?.id,
+        grower_id: user?.id ?? null,
         produce_name: form.produceName,
         quantity_type: form.quantityType,
         quantity_value: form.quantityType === 'estimate' ? form.estimateOption : `${form.quantityValue} ${form.quantityUnit}`,
@@ -326,7 +326,7 @@ export default function CreateListingPage() {
         expiry_hours: expiryHours,
         expires_at: expiresAt.toISOString(),
         status: 'active',
-        suburb: user?.user_metadata?.suburb || '',
+        suburb: user?.user_metadata?.suburb ?? '',
         image_urls: imageUrls,
       })
     } catch {

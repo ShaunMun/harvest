@@ -385,11 +385,7 @@ export default function OnboardingPage() {
     }
   }
 
-  const handleGoToFeed = () => {
-    goToStep(4, () => {
-      setTimeout(() => router.push('/feed'), 1500)
-    })
-  }
+  const handleGoToFeed = () => router.push('/feed')
   const skipToFeed = () => router.push('/feed')
 
   const firstName = form.name.trim().split(/\s+/)[0] || 'friend'
