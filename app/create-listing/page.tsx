@@ -303,12 +303,14 @@ export default function CreateListingPage() {
 
       const imageUrls = await uploadPhotos()
       const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
+      const sessionId = typeof window !== 'undefined' ? localStorage.getItem('harvest_session_id') : null
       const expiresAt = new Date()
       const expiryHours = parseInt(form.expiry?.replace(/\D/g, '') || '48') || 48
       expiresAt.setHours(expiresAt.getHours() + expiryHours)
 
       await supabase.from('listings').insert({
         grower_id: user?.id ?? null,
+        session_id: sessionId,
         produce_name: form.produceName,
         quantity_type: form.quantityType,
         quantity_value: form.quantityType === 'estimate' ? form.estimateOption : `${form.quantityValue} ${form.quantityUnit}`,

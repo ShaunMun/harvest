@@ -306,35 +306,40 @@ export default function FeedPage() {
   const [toast, setToast]               = useState<string | null>(null)
   const [liveListings, setLiveListings] = useState<Listing[]>([])
 
-  // Load real listings from Supabase — fall back to dummy data if none exist yet
+  // Load real listings from Supabase for the current session only — merge with dummies
   useEffect(() => {
     const loadListings = async () => {
       try {
-        const { data } = await supabase
+        // Only show listings created in this session (tagged with session_id in localStorage)
+        const sessionId = typeof window !== 'undefined' ? localStorage.getItem('harvest_session_id') : null
+        if (!sessionId) return // no session yet — just show dummies
+
+        const { data, error } = await supabase
           .from('listings')
           .select('*, profiles(name, suburb, xp)')
           .eq('status', 'active')
+          .eq('session_id', sessionId)
           .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false })
-        if (data && data.length > 0) {
-          // Map Supabase shape → local Listing shape
-          const mapped: Listing[] = data.map((r: Record<string, unknown>) => ({
-            id: r.id as number,
-            type: (r.listing_type as string).toUpperCase() as ListingType,
-            produce: r.produce_name as string,
-            quantity: r.quantity_value as string || '',
-            suburb: (r.suburb as string) || ((r.profiles as Record<string, unknown>)?.suburb as string) || '',
-            growerName: ((r.profiles as Record<string, unknown>)?.name as string) || 'Grower',
-            rating: 4.5,
-            distance: 1.0,
-            image: Array.isArray(r.image_urls) && (r.image_urls as string[]).length > 0 ? (r.image_urls as string[])[0] : FALLBACK,
-            price: r.price ? `R${r.price}` : undefined,
-            pickupPoint: Array.isArray(r.harvest_points) ? (r.harvest_points as string[])[0] : undefined,
-          }))
-          setLiveListings(mapped)
-        }
+        if (error || !data || data.length === 0) return
+
+        // Map Supabase shape → local Listing shape
+        const mapped: Listing[] = data.map((r: Record<string, unknown>) => ({
+          id: (r.id as number) + 1000, // offset to avoid collisions with dummy ids
+          type: ((r.listing_type as string) || 'FREE').toUpperCase() as ListingType,
+          produce: r.produce_name as string,
+          quantity: (r.quantity_value as string) || '',
+          suburb: (r.suburb as string) || ((r.profiles as Record<string, unknown>)?.suburb as string) || 'Joburg',
+          growerName: ((r.profiles as Record<string, unknown>)?.name as string) || 'You',
+          rating: 5.0,
+          distance: 0.5,
+          image: Array.isArray(r.image_urls) && (r.image_urls as string[]).length > 0 ? (r.image_urls as string[])[0] : FALLBACK,
+          price: r.price ? `R${r.price}` : undefined,
+          pickupPoint: Array.isArray(r.harvest_points) ? (r.harvest_points as string[])[0] : undefined,
+        }))
+        setLiveListings(mapped)
       } catch {
-        // Supabase not configured yet — dummy data stays in place
+        // Supabase not configured yet — dummies stay
       }
     }
     loadListings()
@@ -345,8 +350,8 @@ export default function FeedPage() {
     setTimeout(() => setToast(null), 2500)
   }
 
-  // Use live listings if available, otherwise fall back to dummy data
-  const sourceListings = liveListings.length > 0 ? liveListings : ALL_LISTINGS
+  // Always show 12 dummies; real listings from this session appear first
+  const sourceListings = [...liveListings, ...ALL_LISTINGS]
 
   const listings = useMemo(() => {
     let list = [...sourceListings]

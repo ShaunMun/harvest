@@ -376,6 +376,9 @@ export default function OnboardingPage() {
           suburb: form.suburb,
         })
       }
+      // Generate a session id so listings created this session appear in the feed
+      const sessionId = `demo_${Date.now()}`
+      localStorage.setItem('harvest_session_id', sessionId)
       goToStep(3)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong — try again.'

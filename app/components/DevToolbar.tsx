@@ -37,15 +37,33 @@ export function DevToolbar() {
   const handleTestLogin = async () => {
     setLoginState('loading')
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // 1. Sign out current session
+      await supabase.auth.signOut()
+
+      // 2. Clear all local storage (removes session_id and any cached data)
+      localStorage.clear()
+      sessionStorage.clear()
+
+      // 3. Sign in as test user
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
         email: TEST_EMAIL,
         password: TEST_PASSWORD,
       })
       if (error) throw error
+
+      // 4. Delete any listings created by the test user in previous sessions
+      const userId = signInData.user?.id
+      if (userId) {
+        await supabase.from('listings').delete().eq('grower_id', userId)
+      }
+
+      // 5. Generate a fresh session id for this demo run
+      const newSessionId = `demo_${Date.now()}`
+      localStorage.setItem('harvest_session_id', newSessionId)
+
       setLoginState('done')
       setTimeout(() => {
-        router.push('/feed')
-        setLoginState('idle')
+        window.location.href = '/onboarding'
       }, 600)
     } catch {
       setLoginState('error')
@@ -149,10 +167,10 @@ export function DevToolbar() {
             whiteSpace: 'nowrap',
           }}
         >
-          {loginState === 'loading' ? 'Signing in…' :
-           loginState === 'done'    ? '✓ Signed in' :
+          {loginState === 'loading' ? 'Resetting…' :
+           loginState === 'done'    ? '✓ Fresh start' :
            loginState === 'error'   ? '✗ Failed' :
-           '→ Login as test user'}
+           '→ Reset + demo login'}
         </button>
 
         <p style={{
